@@ -59,6 +59,10 @@ install(DIRECTORY config/
   	DESTINATION share/${PROJECT_NAME}/config
   	)
 
+install(DIRECTORY rviz/
+  	DESTINATION share/${PROJECT_NAME}/rviz
+  	)
+
 install(TARGETS
   yesense_node_publisher
   yesense_node_subscriber
