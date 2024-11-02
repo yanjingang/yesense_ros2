@@ -298,6 +298,7 @@ class YESENSE_Publisher : public rclcpp::Node
 	int baud_rate;
 	std::string frame_id;	
 	int driver_type;	// 选择使用ROS串口驱动或是linux原生驱动
+	double timestamp_gap{0};	// 记录H30首帧数据里，模块精振时钟与操作系统时钟的gap
 
 	// ===
 	yis_out_data_t yis_out;
@@ -342,9 +343,19 @@ void YESENSE_Publisher::publish_msg(yis_out_data_t *result)
 	yesense_interface::msg::NavMinUtc		nav_min_utc_data;
 	yesense_interface::msg::NavAll			nav_all_data;
 
+
     // =========== publish imu message ==============
-    imu_ros_data.header.frame_id 	= frame_id;
-    imu_ros_data.header.stamp = this->get_clock()->now();
+	// 用sensor精振和系统时间的gap修正IMU数据时间
+	double now_timestamp = this->get_clock()->now().seconds();
+	double sensor_timestamp = static_cast<double>(result->sample_timestamp / 1000000.0);
+	if (std::abs(now_timestamp - (sensor_timestamp + timestamp_gap)) > 0.05) {
+		timestamp_gap = now_timestamp - sensor_timestamp;
+	}
+	double amend_timestamp = sensor_timestamp + timestamp_gap;
+	printf("tid:%d sensor:%lf now:%lf gap:%lf amend:%lf\n", result->tid, sensor_timestamp, now_timestamp, timestamp_gap, amend_timestamp);
+	// imu ros data
+    imu_ros_data.header.frame_id 	= frame_id;		// 如果不加frame_id，rziv会因为frame_id为空而过滤不显示
+    imu_ros_data.header.stamp = rclcpp::Time(static_cast<int64_t>(amend_timestamp * 1000000000.0)); // this->get_clock()->now();
 
     imu_ros_data.orientation.x = result->quat.q1;
 	imu_ros_data.orientation.y = result->quat.q2;
