@@ -348,11 +348,23 @@ void YESENSE_Publisher::publish_msg(yis_out_data_t *result)
 	// 用sensor精振和系统时间的gap修正IMU数据时间
 	double now_timestamp = this->get_clock()->now().seconds();
 	double sensor_timestamp = static_cast<double>(result->sample_timestamp / 1000000.0);
-	if (std::abs(now_timestamp - (sensor_timestamp + timestamp_gap)) > 0.05) {
+	if (std::abs(now_timestamp - (sensor_timestamp + timestamp_gap)) > 0.01) {
 		timestamp_gap = now_timestamp - sensor_timestamp;
 	}
 	double amend_timestamp = sensor_timestamp + timestamp_gap;
-	printf("tid:%d sensor:%lf now:%lf gap:%lf amend:%lf\n", result->tid, sensor_timestamp, now_timestamp, timestamp_gap, amend_timestamp);
+	// printf("tid:%d sensor:%lf now:%lf gap:%lf amend:%lf\n", result->tid, sensor_timestamp, now_timestamp, timestamp_gap, amend_timestamp);
+	std::cout << std::fixed << std::setprecision(6)
+                << "IMU tid:" << result->tid << " time:" << amend_timestamp << " gap:" << now_timestamp - amend_timestamp
+				<< " acc:" << result->acc.x << 
+                    "," << result->acc.y << 
+                    "," << result->acc.z
+                << " gyro:" << result->gyro.x << 
+                    "," << result->gyro.y << 
+                    "," << result->gyro.z
+                << " quat:" << result->quat.q1 << 
+                    "," << result->quat.q2 << 
+                    "," << result->quat.q3 << 
+                    "," << result->quat.q0 << std::endl;
 	// imu ros data
     imu_ros_data.header.frame_id 	= frame_id;		// 如果不加frame_id，rziv会因为frame_id为空而过滤不显示
     imu_ros_data.header.stamp = rclcpp::Time(static_cast<int64_t>(amend_timestamp * 1000000000.0)); // this->get_clock()->now();
