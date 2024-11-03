@@ -348,7 +348,7 @@ void YESENSE_Publisher::publish_msg(yis_out_data_t *result)
 	// 用sensor精振和系统时间的gap修正IMU数据时间
 	double now_timestamp = this->get_clock()->now().seconds();
 	double sensor_timestamp = static_cast<double>(result->sample_timestamp / 1000000.0);
-	if (std::abs(now_timestamp - (sensor_timestamp + timestamp_gap)) > 0.01) {
+	if (std::abs(now_timestamp - (sensor_timestamp + timestamp_gap)) > 0.005) {
 		timestamp_gap = now_timestamp - sensor_timestamp;
 	}
 	double amend_timestamp = sensor_timestamp + timestamp_gap;
